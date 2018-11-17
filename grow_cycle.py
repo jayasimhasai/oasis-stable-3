@@ -9,26 +9,40 @@ import schedule
 class GrowCycle:
     def __init__(self, states, logger_received):
         self.parser = ConfigParser()
-        if path.isfile("config_files/plant.conf"):
-            print("config_file present")
-        self.parser.read('config_files/plant.conf')
-        self.plantCycleDuration = self.parser.get('PlantInfo', 'plantCycle')
-        self.growStartDate = datetime.datetime.now()
-        self.estimatedHarvest = datetime.datetime.now() + datetime.timedelta(weeks=int(self.plantCycleDuration))
+        self.plantCycleDuration = None
+        self.growStartDate = None
+        self.estimatedHarvest = None
+        self.tempUL = None
+        self.tempLL = None
+        self.humidityUL = None
+        self.humidityLL = None
+        self.phUL = None
+        self.phLL = None
+        self.ecUL = None
+        self.ecLL = None
+        self.waterlevelUL = None
+        self.waterlevelLL = None
         self.ledOnDuration = None
         self.ledOnInterval = None
         self.fanOnDuration = None
         self.fanOnInterval = None
         self.pumpOnDuration = None
         self.pumpOnInterval = None
-        self.collectDataInterval = None
-        self.collectImageInterval = None
+        self.collectDataDuration = None
+        self.collectCameraInterval = None
+        self.collectCameraDuration = None
+        self.sendDataToAWSInterval = None
+        self.sendImagesToAWSInterval = None
+        self.collectDataInterval = 30
+        self.collectImageInterval = 60
         # self.Actuator = ActuatorControl()
         self.states = states
         self.logger = logger_received
 
-    def schedCurrentWeek(self, currentWeek):
-        # parser = ConfigParser()
+    def sched_current_week(self, currentWeek):
+
+        # | add try catch later |
+
         self.parser.read('config_files/plant.conf')
         # get plant critical data
         self.tempUL = int(self.parser.get(currentWeek, 'tempUL'))
@@ -53,10 +67,14 @@ class GrowCycle:
                                                    'fanOnDuration'))
         self.fanOnInterval = float(self.parser.get(currentWeek,
                                                    'fanOnInterval'))
-        self.pumpOnDuration = int(self.parser.get(currentWeek,
-                                                  'pumpOnDuration'))
-        self.pumpOnInterval = int(self.parser.get(currentWeek,
-                                                  'pumpOnInterval'))
+        self.pumpMixingOnDuration = int(self.parser.get(currentWeek,
+                                                        'pumpMixingOnDuration'))
+        self.pumpMixingOnInterval = int(self.parser.get(currentWeek,
+                                                        'pumpMixingOnInterval'))
+        self.pumpPouringOnDuration = int(self.parser.get(currentWeek,
+                                                         'pumpPouringOnDuration'))
+        self.pumpPouringOnInterval = int(self.parser.get(currentWeek,
+                                                         'pumpPouringOnInterval'))
         self.collectDataInterval = int(self.parser.get(currentWeek,
                                                        'collectDataInterval'))
         self.collectDataDuration = int(self.parser.get(currentWeek,
@@ -91,6 +109,79 @@ class GrowCycle:
         self.states.waterlevelLL = self.waterlevelLL
 
         self.logger.debug('Global states declared')
+
+    # | add try catch to all the actuator functions |
+    
+    def light_on(self):
+        self.Actuator.turn_light_on()
+        self.logger.debug('Led switched ON')
+        self.states.LED_status = True
+        lightOffTime = format(datetime.datetime.now() +
+                              datetime.timedelta(hours=self.ledOnDuration),
+                              '%H:%M:%S')
+        schedule.every().day.at(lightOffTime).do(self.lightOff)
+
+    def light_off(self):
+        self.Actuator.turn_light_off()
+        self.logger.debug('Led Switch Off')
+        self.states.LED_status = False
+        return schedule.CancelJob
+
+    def fan_on(self):
+        self.Actuator.turn_fan_on()
+        self.logger.debug('Fan switched ON')
+        self.states.FAN_status = True
+        fanOffTime = format(datetime.datetime.now() +
+                            datetime.timedelta(minutes=self.fanOnDuration),
+                            '%H:%M:%S')
+        schedule.every().day.at(fanOffTime).do(self.fanOff)
+
+    def fan_off(self):
+        self.Actuator.turn_fan_off()
+        self.logger.debug('Fan switched Off')
+        self.states.FAN_status = False
+        return schedule.CancelJob
+
+    def pump_mixing_on(self):
+        self.Actuator.turn_pump_mixing_on()
+        self.logger.debug('Mixing Pump switched ON')
+        self.states.Pump_Mix_status = True
+        pumpOffTime = format(datetime.datetime.now() +
+                             datetime.timedelta(minutes=self.pumpMixingOnDuration),
+                             '%H:%M:%S')
+        schedule.every().day.at(pumpOffTime).do(self.pumpMixingOff)
+
+    def pump_mixing_off(self):
+        self.Actuator.turn_pump_mixing_off()
+        self.logger.debug('Mixing Pump switched OFF')
+        self.states.Pump_Mix_status = False
+        return schedule.CancelJob
+
+    def pump_pouring_on(self):
+        self.Actuator.turn_pump_pour_on()
+        self.logger.debug('Pouring Pump switched ON')
+        self.states.Pump_Mix_status = True
+        pumpOffTime = format(datetime.datetime.now() +
+                             datetime.timedelta(minutes=self.pumpPouringOnDuration),
+                             '%H:%M:%S')
+        schedule.every().day.at(pumpOffTime).do(self.pumpOff)
+
+    def pump_pouring_off(self):
+        self.Actuator.turn_pump_pour_off()
+        self.logger.debug('Pouring Pump switched OFF')
+        self.states.Pump_Mix_status = False
+        return schedule.CancelJob
+
+    def get_growcycle_info(self):
+        if path.isfile("config_files/plant.conf"):
+            self.logger.debug('Config File Found')
+            self.parser.read('config_files/plant.conf')
+            self.plantCycleDuration = self.parser.get('PlantInfo', 'plantCycle')
+            self.growStartDate = datetime.datetime.now()
+            self.estimatedHarvest = datetime.datetime.now() + datetime.timedelta(weeks=int(self.plantCycleDuration))
+            self.logger.debug('Config File Read')
+        else:
+            self.logger.error('Config File Not Found')
 
 
 if __name__ == '__main__':

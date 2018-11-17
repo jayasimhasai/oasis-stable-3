@@ -111,7 +111,7 @@ class GrowCycle:
         self.logger.debug('Global states declared')
 
     # | add try catch to all the actuator functions |
-    
+
     def light_on(self):
         self.Actuator.turn_light_on()
         self.logger.debug('Led switched ON')

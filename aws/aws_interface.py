@@ -1,18 +1,13 @@
-from AWSIoTPythonSDK.MQTTLib import AWSIoTMQTTClient
+import AWSIoTMQTTClient
 import requests
 import json
-from configparser import ConfigParser
-import datetime
-from os import path
 
 
 class AWSInterface():
 
     def __init__(self):
         parser = ConfigParser()
-        if path.isfile('config_files/device.conf'):
-            parser.read('config_files/device.conf')
-
+        parser.read('../config_files/device.conf')
         self.host = parser.get('device', 'host')
         self.port = int(parser.get('device', 'port'))
         self.clientId = parser.get('device', 'clientId')
@@ -22,7 +17,7 @@ class AWSInterface():
         self.privateKeyPath = parser.get('device', 'privateKeyPath')
         self.certificatePath = parser.get('device', 'certificatePath')
         self.growId = parser.get('grow', 'growId')
-        parser.read('plant.conf')
+        parser.read('../config_files/plant.conf')
         self.growStartDate = None
         self.growStartDate = None
         self.myAWSIoTMQTTClient = AWSIoTMQTTClient(self.clientId)
@@ -35,22 +30,47 @@ class AWSInterface():
         self.myAWSIoTMQTTClient.configureDrainingFrequency(2)  # Draining: 2 Hz
         self.myAWSIoTMQTTClient.configureConnectDisconnectTimeout(10)  # 10 sec
         self.myAWSIoTMQTTClient.configureMQTTOperationTimeout(5)  # 5 sec
-        if(self.myAWSIoTMQTTClient.connect()):
-            print("Connected successfully")
-        else:
-            print("Not Connected")
+        cwd = os.getcwd()
+        parent_dir = os.path.dirname(cwd)
+        self.logger = logger_variable(__name__, parent_dir + '../log_files/AWSData.log')
+        while True:
+            
+            try:
+                self.logger.debug('Trying to connect to aws..')
+                self.myAWSIoTMQTTClient.connect()
+            except Exception as e:
+                self.logger.warning('Not connected to aws..')
+                self.logger.warning(e)
+                print(e)
+                print("Not connected...")
+                print("retrying in 5 seconds....")
+                time.sleep(5)
+                continue
+            else:
+                self.logger.debug('connected to aws..')
+                print("connected...")
+                break
 
     def receiveData(self, topic, func):
+        self.logger.debug('subscribed to topic -- %s, activated callback function %s',topic,func)
         self.myAWSIoTMQTTClient.subscribe(topic, 1, func)
 
     def sendData(self, data):
         packet = self.makePacket(data)
         try:
+            self.logger.debug('Trying to send data to aws..')
             self.myAWSIoTMQTTClient.publish(self.topic, packet, 1)
-            return True
         except Exception as e:
-            raise(e)
-            return False
+            self.logger.warning('packet send to aws failed..')
+            self.logger.warning(e)
+            self.logger.debug('packet sending into queue here after')
+            print(e)
+            print("packet sending failed...")
+            print("packet sending into queue here after....")
+
+        else:
+            self.logger.debug('packet sent to aws sucessfull')
+            print("packet sent successfully...")
 
     def makePacket(self, data):
         packet = {}

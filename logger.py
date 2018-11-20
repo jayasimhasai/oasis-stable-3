@@ -1,5 +1,4 @@
 import logging
-import os
 
 
 def logger_variable(name, file_handler):

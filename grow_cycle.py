@@ -9,9 +9,13 @@ import schedule
 class GrowCycle:
     def __init__(self, states, logger_received):
         self.parser = ConfigParser()
-        self.plantCycleDuration = None
-        self.growStartDate = None
-        self.estimatedHarvest = None
+        self.logger = logger_received
+        if path.isfile("config_files/plant.conf"):
+            self.logger.debug("config_file present")
+            self.parser.read('config_files/plant.conf')
+        self.plantCycleDuration = self.parser.get('PlantInfo', 'plantCycle')
+        self.growStartDate = datetime.datetime.now()
+        self.estimatedHarvest = datetime.datetime.now() + datetime.timedelta(weeks=int(self.plantCycleDuration))
         self.tempUL = None
         self.tempLL = None
         self.humidityUL = None
@@ -26,8 +30,10 @@ class GrowCycle:
         self.ledOnInterval = None
         self.fanOnDuration = None
         self.fanOnInterval = None
-        self.pumpOnDuration = None
-        self.pumpOnInterval = None
+        self.pumpMixingOnDuration = None
+        self.pumpMixingOnInterval = None
+        self.pumpPouringOnDuration = None
+        self.pumpPouringOnInterval = None
         self.collectDataDuration = None
         self.collectCameraInterval = None
         self.collectCameraDuration = None
@@ -37,7 +43,6 @@ class GrowCycle:
         self.collectImageInterval = 60
         # self.Actuator = ActuatorControl()
         self.states = states
-        self.logger = logger_received
 
     def sched_current_week(self, currentWeek):
 

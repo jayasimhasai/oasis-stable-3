@@ -1,28 +1,28 @@
-import serial
+from serial import Serial
 import json
 import datetime
-from logger import logger_variable
-import os
 
 
 class SensorData:
-    def __init__(self):
+    def __init__(self, logger):
         """
         Initialize variables and operators
         1. initialize serial port
         2. initialize GPIO pins
         """
 
-        cwd = os.getcwd()
-        parent_dir = os.path.dirname(cwd)
-        self.logger = logger_variable(__name__, parent_dir + '/log_files/SensorData.log')
+        # cwd = os.getcwd()
+        # parent_dir = os.path.dirname(cwd)
+        # self.logger = logger_variable(__name__, parent_dir + '/log_files/SensorData.log')
 
         # open serial port
         self.interrupt_pin = 19
-        self.serialOpen = serial.Serial('/dev/ttyACM0', 115200)
+        self.serialOpen = Serial('/dev/ttyACM0', 115200)
 
         GPIO.setmode(GPIO.BCM)
         GPIO.setup(self.interrupt_pin, GPIO.OUT, initial=1)
+
+        self.logger = logger
 
     def get_data(self):
         """

@@ -6,7 +6,7 @@ class State:
         self.Pump_Mix_status = False
         self.Pump_Pour_status = False
         self.frame_no = 0
-        self.Current_Mode = None
+        self.Current_Mode = 'FOLLOW CONFIG'
         self.activated = None
         self.active_cc_tracker = False
         self.tempUL = 0.0

@@ -2,7 +2,7 @@ import RPi.GPIO as GPIO
 
 
 class ActuatorControl:
-    def __init__(self):
+    def __init__(self, logger):
         self.interrupt = 19
         self.led_out = 21
         self.fan_out = 22
@@ -16,6 +16,8 @@ class ActuatorControl:
         GPIO.setup(self.fan_out, GPIO.OUT, initial=0)
         GPIO.setup(self.pump_mixing_out, GPIO.OUT, initial=0)
         GPIO.setup(self.pump_pour_out, GPIO.OUT, initial=0)
+
+        self.logger = logger
 
     def turn_light_on(self):
         light_state = 0x01

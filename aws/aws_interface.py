@@ -1,13 +1,18 @@
-import AWSIoTMQTTClient
+from AWSIoTPythonSDK.MQTTLib import AWSIoTMQTTClient
 import requests
 import json
+from configparser import ConfigParser
+import datetime
+from os import path
 
 
 class AWSInterface():
 
     def __init__(self):
         parser = ConfigParser()
-        parser.read('device.conf')
+        if path.isfile('config_files/device.conf'):
+            parser.read('config_files/device.conf')
+
         self.host = parser.get('device', 'host')
         self.port = int(parser.get('device', 'port'))
         self.clientId = parser.get('device', 'clientId')

@@ -1,15 +1,11 @@
-from logger import logger_variable
 import subprocess
-import os
 
 
 class CameraCapture:
-    def __init__(self):
-        cwd = os.getcwd()
-        parent_dir = os.path.dirname(cwd)
-        self.logger = logger_variable(__name__, parent_dir+'/log_files/CameraCapture.log')
+    def __init__(self, logger):
+        self.logger = logger
 
-    def capture_image(self):
+    def capture_image(self, frame_no):
         p = subprocess.Popen(['./raspistill.sh'], stdout=subprocess.PIPE)
         com = p.communicate()[0].decode()
         self.log('Camera Still Captured')

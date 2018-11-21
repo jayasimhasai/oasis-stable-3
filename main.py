@@ -8,8 +8,60 @@ from grow_cycle import GrowCycle
 from data_acquisition.camera_capture import CameraCapture
 from infrastructure.state import State
 from infrastructure.critical_condition import *
-# from aws.aws_interface import AWSInterface
+from aws.aws_interface import AWSInterface
 import datetime
+
+def set_mode_grow_start(plant_type):
+    '''for now hard code plant_type 
+        later add functionality to 
+        download plant config based on plant_type'''
+    
+    ''' set some variable in config file 
+        read that variable and wakeup the main_function'''
+
+def set_mode_grow_end():
+    ''' clear the schedular
+        clear varibles in config file
+        set mode to sleep state or something 
+        which waits for start grow'''
+
+def set_mode_water_change(param):
+    '''change mode to water change mode
+        if param is start
+        if param is end set the mode to grow'''
+
+def set_mode_ph_change(param):
+    '''change mode to ph change mode
+        if param is start
+        else set it to grow mode'''
+        
+def task_activation(client, userdata, message):
+    logger = logger_variable(__name__, 'log_files/main.log')
+    task = message.payload.task
+    logger.debug('user activated task %s',task)
+    if task == "grow-start":
+        plant_type = message.payload.plant_type
+        set_mode_grow_start(plant_type)
+
+    elif task == "grow-end":
+        set_mode_grow_end()
+
+    elif task == "water-change-start":
+        set_mode_water_change("start")
+
+    elif task == "water-change-end":
+        set_mode_water_change("end")
+
+    elif task == "ph-change-start":
+        set_mode_ph_change("start")
+
+    elif task == "ph-change-end":
+        set_mode_ph_change("end")
+
+    else:
+        logger.error('unknown task %s',task)
+
+
 
 
 class Main:
@@ -36,7 +88,7 @@ class Main:
         self.Data_Queue = Queue()
         self.Image_Queue = Queue()
         self.AWS_Queue = Queue()
-        # self.AWS = AWSInterface()
+        self.AWS = AWSInterface()
         self.data_log = open('log_files/data_collected.log', 'w')
 
     def main_function(self):
@@ -195,7 +247,15 @@ class Main:
         self.data_log.write(message)
         self.data_log.write('\n')
 
+    def aws_register(self):
+        parser = ConfigParser()
+        parser.read('../config_files/device.conf')
+        device_id = parser.get('device', 'deviceId')
+        topic = device_id+"/task"
+        self.aws.receiveData(topic,task_activation)
+        return
 
 if __name__ == '__main__':
     main_soft = Main()
+    main_soft.aws_register()
     main_soft.main_function()

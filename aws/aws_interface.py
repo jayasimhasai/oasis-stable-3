@@ -15,7 +15,7 @@ class AWSInterface():
         parser.read('../config_files/device.conf')
         self.host = parser.get('device', 'host')
         self.port = int(parser.get('device', 'port'))
-        self.clientId = parser.get('device', 'clientId')
+        self.clientId = parser.get('device', 'deviceId')
         self.userId = parser.get('device', 'userId')
         self.topic = parser.get('device', 'topic')
         self.rootCAPath = parser.get('device', 'rootCAPath')

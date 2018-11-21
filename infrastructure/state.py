@@ -8,6 +8,7 @@ class State:
         self.frame_no = 0
         self.Current_Mode = 'FOLLOW CONFIG'
         self.activated = None
+        self.initiate_grow_flag = False
         self.active_cc_tracker = False
         self.tempUL = 0.0
         self.tempLL = 0.0

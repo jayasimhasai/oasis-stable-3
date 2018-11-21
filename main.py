@@ -2,67 +2,16 @@ from logger import logger_variable
 import time
 import json
 import schedule
+import threading
 from configparser import ConfigParser
 from queue import Queue
 from grow_cycle import GrowCycle
-# from data_acquisition.sensor_data import SensorData
+from data_acquisition.sensor_data import SensorData
 from data_acquisition.camera_capture import CameraCapture
 from infrastructure.state import State
 from infrastructure.critical_condition import *
 from aws.aws_interface import AWSInterface
 import datetime
-
-def set_mode_grow_start(plant_type):
-    '''for now hard code plant_type 
-        later add functionality to 
-        download plant config based on plant_type'''
-    
-    ''' set some variable in config file 
-        read that variable and wakeup the main_function'''
-
-def set_mode_grow_end():
-    ''' clear the schedular
-        clear varibles in config file
-        set mode to sleep state or something 
-        which waits for start grow'''
-
-def set_mode_water_change(param):
-    '''change mode to water change mode
-        if param is start
-        if param is end set the mode to grow'''
-
-def set_mode_ph_change(param):
-    '''change mode to ph change mode
-        if param is start
-        else set it to grow mode'''
-
-def task_activation(client, userdata, message):
-    logger = logger_variable(__name__, 'log_files/main.log')
-    task = message.payload.task
-    logger.debug('user activated task %s',task)
-    if task == "grow-start":
-        plant_type = message.payload.plant_type
-        set_mode_grow_start(plant_type)
-
-    elif task == "grow-end":
-        set_mode_grow_end()
-
-    elif task == "water-change-start":
-        set_mode_water_change("start")
-
-    elif task == "water-change-end":
-        set_mode_water_change("end")
-
-    elif task == "ph-change-start":
-        set_mode_ph_change("start")
-
-    elif task == "ph-change-end":
-        set_mode_ph_change("end")
-
-    else:
-        logger.error('unknown task %s',task)
-
-
 
 
 class Main:
@@ -81,7 +30,7 @@ class Main:
         self.logger = logger_variable(__name__, 'log_files/main.log')
 
         self.states = State()
-        self.grow_cycle = GrowCycle(self.states, self.logger)
+        self.grow_cycle = None
         # self.sensor_data = SensorData(self.logger)
         # self.actuator = ActuatorControl(self.logger)
         self.camera_capture = CameraCapture(self.logger)
@@ -94,45 +43,52 @@ class Main:
 
     def main_function(self):
 
-        estimated_harvest = self.grow_cycle.estimatedHarvest
-        current_week = self.get_current_week()
-        self.states.Current_Mode = "FOLLOW CONFIG"
-        self.states.activated = False
-        self.logger.debug('Grow Initiated')
+        aws_thread = threading.Thread(target=self.aws_register)
+        aws_thread.start()
 
-        while datetime.datetime.now() <= estimated_harvest:
-            self.states.activated = False
+        while True:
+            if self.states.initiate_grow_flag is not False:
+                self.grow_cycle = GrowCycle(self.states, self.logger)
+                estimated_harvest = self.grow_cycle.estimatedHarvest
+                current_week = self.get_current_week()
 
-            # start weekly jobs
-            while self.get_current_week() == current_week:
+                self.logger.debug('Grow Initiated')
 
-                if self.states.Current_Mode == "FOLLOW CONFIG" and not self.states.activated:
-                    self.grow_cycle.sched_current_week(current_week)
-                    self.logger.debug('Config file scheduler created')
-                    self.schedule_test_jobs()
-                    self.states.activated = True
-                    self.logger.debug('Config file scheduler started')
-                schedule.run_pending()
-                time.sleep(1)
+                while datetime.datetime.now() <= estimated_harvest:
+                    self.states.activated = False
 
-            current_week = self.get_current_week()
-            self.logger.info('New week starts')
-        return
+                    # start weekly jobs
+                    while self.get_current_week() == current_week:
 
-    def check_user_input(self, user_data):
-        """
-        :param user_data: data received from AWS
-        :return: no return
-        """
-        # convert the json to dict
-        data = json.loads(user_data)
-        new_mode = None
+                        if self.states.Current_Mode == "FOLLOW CONFIG" and not self.states.activated:
+                            self.grow_cycle.sched_current_week(current_week)
+                            self.logger.debug('Config file scheduler created')
+                            self.schedule_test_jobs()
+                            self.states.activated = True
+                            self.logger.debug('Config file scheduler started')
 
-        # assign the new mode to current mode in state
-        if data["activity"] is "mode change":
-            new_mode = data["mode"]
-        self.states.Current_Mode = new_mode
-        self.states.activated = False
+                        elif self.states.Current_Mode == "WATER CHANGE" and not self.states.activated:
+                            self.grow_cycle.sched_current_week('water_change')
+                            self.logger.debug('Water Change scheduler created')
+                            self.schedule_test_jobs()
+                            self.states.activated = True
+                            self.logger.debug('Water Change scheduler started')
+
+                        elif self.states.Current_Mode == "PH DOSING" and not self.states.activated:
+                            self.grow_cycle.sched_current_week('ph_dosing')
+                            self.logger.debug('Ph Dosing scheduler created')
+                            self.schedule_test_jobs()
+                            self.states.activated = True
+                            self.logger.debug('Ph Dosing scheduler started')
+
+                        schedule.run_pending()
+                        time.sleep(1)
+
+                    current_week = self.get_current_week()
+                    self.logger.info('New week starts')
+
+            else:
+                pass
 
         return
 
@@ -250,11 +206,93 @@ class Main:
 
     def aws_register(self):
         parser = ConfigParser()
-        parser.read('../config_files/device.conf')
+        parser.read('/config_files/device.conf')
         device_id = parser.get('device', 'deviceId')
         topic = device_id+"/task"
-        self.aws.receiveData(topic,task_activation)
+        self.AWS.receiveData(topic, self.task_activation)
+
         return
+
+    def set_mode_grow_start(self, plant_type):
+        '''for now hard code plant_type
+            later add functionality to
+            download plant config based on plant_type'''
+
+        ''' set some variable in config file
+            read that variable and wakeup the main_function'''
+        schedule.cancel_job()
+        self.states.Current_Mode = "FOLLOW CONFIG"
+        self.states.activated = False
+        self.states.initiate_grow_flag = True
+
+        return
+
+    def set_mode_grow_end(self):
+        ''' clear the schedular
+            clear varibles in config file
+            set mode to sleep state or something
+            which waits for start grow'''
+        schedule.cancel_job()
+        self.states.Current_Mode = "GROW END"
+        self.states.activated = False
+        return
+
+    def set_mode_water_change(self, param):
+        '''change mode to water change mode
+            if param is start
+            if param is end set the mode to grow'''
+
+        schedule.cancel_job()
+        if param == 'start':
+            self.states.Current_Mode = "WATER CHANGE"
+            self.states.activated = False
+        elif param == 'end':
+            self.states.Current_Mode = "FOLLOW CONFIG"
+            self.states.activated = False
+
+        return
+
+    def set_mode_ph_change(self, param):
+        '''change mode to ph change mode
+            if param is start
+            else set it to grow mode'''
+
+        schedule.cancel_job()
+        if param == 'start':
+            self.states.Current_Mode = "PH DOSING"
+            self.states.activated = False
+        elif param == 'end':
+            self.states.Current_Mode = "FOLLOW CONFIG"
+            self.states.activated = False
+
+        return
+
+    def task_activation(self, client, userdata, message):
+        # logger = logger_variable(__name__, 'log_files/main.log')
+        task = message.payload.task
+        self.logger.debug('user activated task %s', task)
+        if task == "grow-start":
+            plant_type = message.payload.plant_type
+            self.set_mode_grow_start(plant_type)
+
+        elif task == "grow-end":
+            self.set_mode_grow_end()
+
+        elif task == "water-change-start":
+            self.set_mode_water_change("start")
+
+        elif task == "water-change-end":
+            self.set_mode_water_change("end")
+
+        elif task == "ph-change-start":
+            self.set_mode_ph_change("start")
+
+        elif task == "ph-change-end":
+            self.set_mode_ph_change("end")
+
+        else:
+            self.logger.error('unknown task %s', task)
+
 
 if __name__ == '__main__':
     main_soft = Main()

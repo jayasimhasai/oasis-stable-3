@@ -1,6 +1,11 @@
-import AWSIoTMQTTClient
+from logger import logger_variable
+from AWSIoTPythonSDK.MQTTLib import AWSIoTMQTTClient
+import time
 import requests
 import json
+from configparser import ConfigParser
+import os
+import datetime
 
 
 class AWSInterface():
@@ -34,7 +39,7 @@ class AWSInterface():
         parent_dir = os.path.dirname(cwd)
         self.logger = logger_variable(__name__, parent_dir + '../log_files/AWSData.log')
         while True:
-            
+
             try:
                 self.logger.debug('Trying to connect to aws..')
                 self.myAWSIoTMQTTClient.connect()
@@ -52,7 +57,7 @@ class AWSInterface():
                 break
 
     def receiveData(self, topic, func):
-        self.logger.debug('subscribed to topic -- %s, activated callback function %s',topic,func)
+        self.logger.debug('subscribed to topic -- %s, activated callback function %s', topic, func)
         self.myAWSIoTMQTTClient.subscribe(topic, 1, func)
 
     def sendData(self, data):

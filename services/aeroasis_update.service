@@ -1,0 +1,14 @@
+[Unit]
+Description= Aeroasis update service 
+After = network.target
+StartLimitIntervalSec=0
+
+[Service]
+Type=idle
+Restart=always
+RestartSec=1
+User=aeroasis
+ExecStart=/usr/bin/python /home/aeroasis/main_software/update_daemon.py
+
+[Install]
+WantedBy=multi-user.target

@@ -12,7 +12,8 @@ class AWSInterface():
 
     def __init__(self):
         parser = ConfigParser()
-        parser.read('../config_files/device.conf')
+        
+        parser.read('config_files/device.conf')
         self.host = parser.get('device', 'host')
         self.port = int(parser.get('device', 'port'))
         self.clientId = parser.get('device', 'deviceId')
@@ -22,7 +23,7 @@ class AWSInterface():
         self.privateKeyPath = parser.get('device', 'privateKeyPath')
         self.certificatePath = parser.get('device', 'certificatePath')
         self.growId = parser.get('grow', 'growId')
-        parser.read('../config_files/plant.conf')
+        parser.read('config_files/plant.conf')
         self.growStartDate = None
         self.growStartDate = None
         self.myAWSIoTMQTTClient = AWSIoTMQTTClient(self.clientId)
@@ -37,7 +38,7 @@ class AWSInterface():
         self.myAWSIoTMQTTClient.configureMQTTOperationTimeout(5)  # 5 sec
         cwd = os.getcwd()
         parent_dir = os.path.dirname(cwd)
-        self.logger = logger_variable(__name__, parent_dir + '../log_files/AWSData.log')
+        self.logger = logger_variable(__name__,'log_files/AWSData.log')
         while True:
 
             try:

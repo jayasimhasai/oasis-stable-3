@@ -47,7 +47,7 @@ class Main:
         aws_thread.start()
 
         while True:
-            if self.states.initiate_grow_flag is not False:
+            if self.states.initiate_grow_flag is True:
                 self.grow_cycle = GrowCycle(self.states, self.logger)
                 estimated_harvest = self.grow_cycle.estimatedHarvest
                 current_week = self.get_current_week()
@@ -206,7 +206,7 @@ class Main:
 
     def aws_register(self):
         parser = ConfigParser()
-        parser.read('/config_files/device.conf')
+        parser.read('config_files/device.conf')
         device_id = parser.get('device', 'deviceId')
         topic = device_id+"/task"
         self.AWS.receiveData(topic, self.task_activation)
@@ -220,7 +220,7 @@ class Main:
 
         ''' set some variable in config file
             read that variable and wakeup the main_function'''
-        schedule.cancel_job()
+        schedule.clear()
         self.states.Current_Mode = "FOLLOW CONFIG"
         self.states.activated = False
         self.states.initiate_grow_flag = True
@@ -269,10 +269,13 @@ class Main:
 
     def task_activation(self, client, userdata, message):
         # logger = logger_variable(__name__, 'log_files/main.log')
-        task = message.payload.task
+        data = json.loads(message.payload.decode())
+        print(type(data))
+        task = data['task']
+        #task = message.payload.task
         self.logger.debug('user activated task %s', task)
         if task == "grow-start":
-            plant_type = message.payload.plant_type
+            plant_type = data['plant_type']
             self.set_mode_grow_start(plant_type)
 
         elif task == "grow-end":

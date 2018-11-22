@@ -6,7 +6,7 @@ import json
 from configparser import ConfigParser
 import os
 import datetime
-
+import base64
 
 class AWSInterface():
 

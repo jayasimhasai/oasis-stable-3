@@ -90,9 +90,27 @@ class AWSInterface():
         iotPacket = json.dumps(packet)
         return iotPacket
 
-    def sendCameraData(self, data):
-        response = requests.post("https://aws.savetos3_api", data=data)
-        return response
+    def sendCameraData(self):
+        img = open('sample.jpg', 'rb').read()
+
+        payload = {
+                    'user_id':self.userId,
+                    'device_id':self.clientId,
+                    'device_type':"aeroasis_device",
+                    'media': base64.b64encode(img).decode()
+                }
+        
+        url = "https://r65hlx6e9a.execute-api.us-west-2.amazonaws.com/beta/upload-image"
+        r = requests.post(url,data=json.dumps(payload))
+        response = r.json()
+        if response['statusCode'] == 200:
+
+            self.logger.debug(response['status'])
+            self.logger.debug('uploaded image name %s',response['image_name'])
+        else:
+            self.logger.error('Image upload failed')
+            self.logger.error(response)
+        return 
 
     def strtoDate(date):
         ''':type date: str

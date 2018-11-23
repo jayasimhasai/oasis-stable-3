@@ -65,6 +65,7 @@ class Main:
                             self.logger.debug('Config file scheduler created')
                             self.schedule_jobs()
                             self.states.activated = True
+                            self.logger.debug(schedule.jobs)
                             self.logger.debug('Config file scheduler started')
 
                         elif self.states.Current_Mode == "WATER CHANGE" and not self.states.activated:
@@ -72,6 +73,7 @@ class Main:
                             self.logger.debug('Water Change scheduler created')
                             self.schedule_jobs()
                             self.states.activated = True
+                            self.logger.debug(schedule.jobs)
                             self.logger.debug('Water Change scheduler started')
 
                         elif self.states.Current_Mode == "PH DOSING" and not self.states.activated:
@@ -80,6 +82,7 @@ class Main:
                             self.schedule_jobs()
                             self.states.activated = True
                             self.states.ph_dosing_flag = True
+                            self.logger.debug(schedule.jobs)
                             self.logger.debug('Ph Dosing scheduler started')
 
                         schedule.run_pending()
@@ -102,35 +105,41 @@ class Main:
         if self.grow_cycle.ledOnDuration != 0:
             schedule.every(self.grow_cycle.ledOnInterval).days.\
                 do(self.grow_cycle.light_on)
+        self.logger.debug('LED task created')
 
         # fan scheduling
         if self.grow_cycle.fanOnDuration != 0:
             schedule.every(self.grow_cycle.fanOnInterval).hours.\
                 do(self.grow_cycle.fan_on)
+        self.logger.debug('Fan scheduler created')
 
         # pump_mixing scheduling
         if self.grow_cycle.pumpMixingOnDuration != 0:
             schedule.every(self.grow_cycle.pumpMixingOnInterval).hours.\
                 do(self.grow_cycle.pump_mixing_on)
+        self.logger.debug('Mixing pump task created')
 
         # data acquisition and image capture scheduling
         schedule.every(self.grow_cycle.collectImageInterval).minutes.\
             do(self.get_camera_data)
         schedule.every(self.grow_cycle.collectDataInterval).minutes.\
             do(self.data_acquisition_job)
+        self.logger.debug('data acquisition and image capture created')
 
         # schedule sending data to aws
         schedule.every(self.grow_cycle.sendDataToAWSInterval).hours.\
             do(self.send_data_to_aws)
+        self.logger.debug('Data sending to AWS scheduled')
 
         # schedule sending images to aws S3
         schedule.every(self.grow_cycle.sendImagesToAWSInterval).hours.\
             do(self.send_camera_data)
+        self.logger.debug('Image sending to S3 scheduled')
 
         if self.states.Current_Mode == "PH DOSING":
             schedule.every(self.grow_cycle.phDosingInterval).seconds.\
                  do(self.ph_routine)
-
+            self.logger.debug('Ph dosing routine scheduled')
         return
 
     def ph_routine(self):
@@ -243,6 +252,7 @@ class Main:
 
         ''' set some variable in config file
             read that variable and wakeup the main_function'''
+        self.logger.debug('Grow Started by the user')
         schedule.clear()
         self.states.Current_Mode = "FOLLOW CONFIG"
         self.states.activated = False
@@ -255,6 +265,7 @@ class Main:
             clear varibles in config file
             set mode to sleep state or something
             which waits for start grow'''
+        self.logger.debug('Grow Ends')
         schedule.clear()
         self.states.Current_Mode = "GROW END"
         self.states.activated = False
@@ -264,7 +275,7 @@ class Main:
         '''change mode to water change mode
             if param is start
             if param is end set the mode to grow'''
-
+        self.logger.debug('Water Change initiated by the user')
         schedule.clear()
         if param == 'start':
             self.states.Current_Mode = "WATER CHANGE"
@@ -281,6 +292,7 @@ class Main:
             else set it to grow mode'''
 
         schedule.clear()
+        self.logger.debug('Ph dosing initiated by the user')
         if param == 'start':
             self.states.Current_Mode = "PH DOSING"
             self.states.activated = False

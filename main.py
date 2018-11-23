@@ -1,4 +1,4 @@
-from logger import logger_variable
+from logger import *
 import time
 import json
 import schedule
@@ -31,8 +31,7 @@ class Main:
 
         self.states = State()
         self.grow_cycle = None
-        # self.sensor_data = SensorData(self.logger)
-        # self.actuator = ActuatorControl(self.logger)
+        self.sensor_data = SensorData(self.logger)
         self.camera_capture = CameraCapture(self.logger)
         self.CC_Queue = Queue()
         self.Data_Queue = Queue()
@@ -49,6 +48,7 @@ class Main:
         while True:
             if self.states.initiate_grow_flag is True:
                 self.grow_cycle = GrowCycle(self.states, self.logger)
+                self.grow_cycle.get_growcycle_info()
                 estimated_harvest = self.grow_cycle.estimatedHarvest
                 current_week = self.get_current_week()
 
@@ -63,22 +63,23 @@ class Main:
                         if self.states.Current_Mode == "FOLLOW CONFIG" and not self.states.activated:
                             self.grow_cycle.sched_current_week(current_week)
                             self.logger.debug('Config file scheduler created')
-                            self.schedule_test_jobs()
+                            self.schedule_jobs()
                             self.states.activated = True
                             self.logger.debug('Config file scheduler started')
 
                         elif self.states.Current_Mode == "WATER CHANGE" and not self.states.activated:
                             self.grow_cycle.sched_current_week('water_change')
                             self.logger.debug('Water Change scheduler created')
-                            self.schedule_test_jobs()
+                            self.schedule_jobs()
                             self.states.activated = True
                             self.logger.debug('Water Change scheduler started')
 
                         elif self.states.Current_Mode == "PH DOSING" and not self.states.activated:
                             self.grow_cycle.sched_current_week('ph_dosing')
                             self.logger.debug('Ph Dosing scheduler created')
-                            self.schedule_test_jobs()
+                            self.schedule_jobs()
                             self.states.activated = True
+                            self.states.ph_dosing_flag = True
                             self.logger.debug('Ph Dosing scheduler started')
 
                         schedule.run_pending()
@@ -123,10 +124,35 @@ class Main:
             do(self.send_data_to_aws)
 
         # schedule sending images to aws S3
-        schedule.every(self.grow_cycle.sendImagesToAWSInterval).hour.\
+        schedule.every(self.grow_cycle.sendImagesToAWSInterval).hours.\
             do(self.send_camera_data)
 
+        if self.states.Current_Mode == "PH DOSING":
+            schedule.every(self.grow_cycle.phDosingInterval).seconds.\
+                 do(self.ph_routine)
+
         return
+
+    def ph_routine(self):
+        # get sensor data
+        data = self.sensor_data.get_data()
+
+        # send data for critical check
+        critical_check = check_critical_condition(sensor_data=data, states=self.states)
+
+        if critical_check['ph'] == 'OK':
+            self.states.ph_dosing_flag = False
+        elif critical_check['ph'] == 'UP':
+            self.states.ph_dosing_flag = True
+            self.grow_cycle.ph_up_motor_on()
+        elif critical_check['ph'] == 'DOWN':
+            self.states.ph_dosing_flag = True
+            self.grow_cycle.ph_down_motor_on()
+
+        if not self.states.ph_dosing_flag:
+            return schedule.CancelJob
+        else:
+            return
 
     def schedule_test_jobs(self):
         """
@@ -157,24 +183,21 @@ class Main:
         :parameter: critical_check - get critical condition check data
         :return:
         """
-        # # get sensor data
-        # data = self.sensor_data.get_data()
-        #
-        # # send data for critical check
-        # critical_check = check_critical_condition(sensor_data=data, states=self.states)
-        #
-        # # evaluate the critical condition checklist
-        # # send the data to queue
-        # if critical_check.count("OK") < 5:
-        #     track_critical_condition(critical_check)
-        #     self.Data_Queue.put(data)
-        # else:
-        #     self.Data_Queue.put(data)
+        # get sensor data
+        data = self.sensor_data.get_data()
+
+        # send data for critical check
+        critical_check = check_critical_condition(sensor_data=data, states=self.states)
+
+        # evaluate the critical condition checklist
+        # send the data to queue
+        if critical_check.values().count("OK") < 5:
+            track_critical_condition(critical_check)
+            self.Data_Queue.put(data)
+        else:
+            self.Data_Queue.put(data)
 
         return
-
-    # def interprete_item(self):
-    #     return
 
     def get_camera_data(self):
         # get image data
@@ -232,7 +255,7 @@ class Main:
             clear varibles in config file
             set mode to sleep state or something
             which waits for start grow'''
-        schedule.cancel_job()
+        schedule.clear()
         self.states.Current_Mode = "GROW END"
         self.states.activated = False
         return
@@ -242,7 +265,7 @@ class Main:
             if param is start
             if param is end set the mode to grow'''
 
-        schedule.cancel_job()
+        schedule.clear()
         if param == 'start':
             self.states.Current_Mode = "WATER CHANGE"
             self.states.activated = False
@@ -257,7 +280,7 @@ class Main:
             if param is start
             else set it to grow mode'''
 
-        schedule.cancel_job()
+        schedule.clear()
         if param == 'start':
             self.states.Current_Mode = "PH DOSING"
             self.states.activated = False
@@ -268,11 +291,11 @@ class Main:
         return
 
     def task_activation(self, client, userdata, message):
-        # logger = logger_variable(__name__, 'log_files/main.log')
+
         data = json.loads(message.payload.decode())
-        print(type(data))
+
         task = data['task']
-        #task = message.payload.task
+
         self.logger.debug('user activated task %s', task)
         if task == "grow-start":
             plant_type = data['plant_type']
@@ -299,5 +322,4 @@ class Main:
 
 if __name__ == '__main__':
     main_soft = Main()
-    main_soft.aws_register()
     main_soft.main_function()

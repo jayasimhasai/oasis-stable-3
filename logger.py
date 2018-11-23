@@ -1,11 +1,9 @@
 import logging
+from configparser import ConfigParser
 
 
 def logger_variable(name, file_handler):
 
-    # f = open(file_handler, 'w')
-    # f.close()
-    # initialize logger
     logger = logging.getLogger(name)
     # setLevel -> DEBUG
     logger.setLevel(logging.DEBUG)
@@ -16,3 +14,14 @@ def logger_variable(name, file_handler):
     file_handler.setFormatter(formatter)
     logger.addHandler(file_handler)
     return logger
+
+
+def update_status(file_name, section, keys, values):
+
+    parser = ConfigParser()
+    parser.read(file_name)
+    parser.set(section, keys, values)
+    with open(file_name, 'w') as configfile:
+        parser.write(configfile)
+    configfile.close()
+    return

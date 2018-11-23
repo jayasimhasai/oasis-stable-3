@@ -4,18 +4,16 @@ from logger import logger_variable
 import datetime
 from os import path
 import schedule
+from actuator_control.actuator_control import ActuatorControl
 
 
 class GrowCycle:
     def __init__(self, states, logger_received):
         self.parser = ConfigParser()
         self.logger = logger_received
-        if path.isfile("config_files/plant.conf"):
-            self.logger.debug("config_file present")
-            self.parser.read('config_files/plant.conf')
-        self.plantCycleDuration = self.parser.get('PlantInfo', 'plantCycle')
-        self.growStartDate = datetime.datetime.now()
-        self.estimatedHarvest = datetime.datetime.now() + datetime.timedelta(weeks=int(self.plantCycleDuration))
+        self.plantCycleDuration = None
+        self.growStartDate = None
+        self.estimatedHarvest = None
         self.tempUL = None
         self.tempLL = None
         self.humidityUL = None
@@ -39,9 +37,11 @@ class GrowCycle:
         self.collectCameraDuration = None
         self.sendDataToAWSInterval = None
         self.sendImagesToAWSInterval = None
+        self.phDosingInterval = None
+        self.phDosingDuration = None
         self.collectDataInterval = 30
         self.collectImageInterval = 60
-        # self.Actuator = ActuatorControl()
+        self.Actuator = ActuatorControl(logger_received)
         self.states = states
 
     def sched_current_week(self, currentWeek):
@@ -124,7 +124,7 @@ class GrowCycle:
         lightOffTime = format(datetime.datetime.now() +
                               datetime.timedelta(hours=self.ledOnDuration),
                               '%H:%M:%S')
-        schedule.every().day.at(lightOffTime).do(self.lightOff)
+        schedule.every().day.at(lightOffTime).do(self.light_off)
 
     def light_off(self):
         self.Actuator.turn_light_off()
@@ -139,7 +139,7 @@ class GrowCycle:
         fanOffTime = format(datetime.datetime.now() +
                             datetime.timedelta(minutes=self.fanOnDuration),
                             '%H:%M:%S')
-        schedule.every().day.at(fanOffTime).do(self.fanOff)
+        schedule.every().day.at(fanOffTime).do(self.fan_off)
 
     def fan_off(self):
         self.Actuator.turn_fan_off()
@@ -154,7 +154,7 @@ class GrowCycle:
         pumpOffTime = format(datetime.datetime.now() +
                              datetime.timedelta(minutes=self.pumpMixingOnDuration),
                              '%H:%M:%S')
-        schedule.every().day.at(pumpOffTime).do(self.pumpMixingOff)
+        schedule.every().day.at(pumpOffTime).do(self.pump_mixing_off)
 
     def pump_mixing_off(self):
         self.Actuator.turn_pump_mixing_off()
@@ -169,12 +169,38 @@ class GrowCycle:
         pumpOffTime = format(datetime.datetime.now() +
                              datetime.timedelta(minutes=self.pumpPouringOnDuration),
                              '%H:%M:%S')
-        schedule.every().day.at(pumpOffTime).do(self.pumpOff)
+        schedule.every().day.at(pumpOffTime).do(self.pump_pouring_off)
 
     def pump_pouring_off(self):
         self.Actuator.turn_pump_pour_off()
         self.logger.debug('Pouring Pump switched OFF')
         self.states.Pump_Mix_status = False
+        return schedule.CancelJob
+
+    def ph_up_motor_on(self):
+        self.Actuator.turn_ph_up_motor_on()
+        self.logger.debug('Ph up motor switched ON')
+        phUpMotorOffTime = format(datetime.datetime.now() +
+                             datetime.timedelta(minutes=self.phDosingDuration),
+                             '%H:%M:%S')
+        schedule.every().day.at(phUpMotorOffTime).do(self.ph_up_motor_off)
+
+    def ph_up_motor_off(self):
+        self.Actuator.turn_ph_up_motor_off()
+        self.logger.debug('Ph up motor switched OFF')
+        return schedule.CancelJob
+
+    def ph_down_motor_on(self):
+        self.Actuator.turn_ph_down_motor_on()
+        self.logger.debug('Ph down motor switched ON')
+        phDownMotorOffTime = format(datetime.datetime.now() +
+                             datetime.timedelta(minutes=self.phDosingDuration),
+                             '%H:%M:%S')
+        schedule.every().day.at(phDownMotorOffTime).do(self.ph_down_motor_off)
+
+    def ph_down_motor_off(self):
+        self.Actuator.turn_ph_down_motor_off()
+        self.logger.debug('Ph down motor switched OFF')
         return schedule.CancelJob
 
     def get_growcycle_info(self):

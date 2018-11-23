@@ -13,52 +13,56 @@ def check_critical_condition(sensor_data, states):
     ph = sensor_data["ph"]
     ec = sensor_data["ec"]
 
-    checklist = []
+    checklist = {'temperature': None,
+                 'humidity': None,
+                 'waterlevel': None,
+                 'ph': None,
+                 'ec': None}
 
     # check temperature condition
     if states.tempUL > temperature > states.tempLL:
-        checklist.append("OK")
+        checklist['temperature'] = "OK"
     else:
         if temperature > states.tempUL:
-            checklist.append("UP")
+            checklist['temperature'] = "UP"
         else:
-            checklist.append("LOW")
+            checklist['temperature'] = "LOW"
 
     # check humidity condition
     if states.humidityUL > humidity > states.humidityLL:
-        checklist.append("OK")
+        checklist['humidity'] = "OK"
     else:
         if humidity > states.humidityUL:
-            checklist.append("UP")
+            checklist['humidity'] = "UP"
         else:
-            checklist.append("LOW")
+            checklist['humidity'] = "LOW"
 
     # check waterlevel condition
     if states.waterlevelUL > waterlevel > states.waterlevelLL:
-        checklist.append("OK")
+        checklist['waterlevel'] = "OK"
     else:
         if waterlevel > states.tempUL:
-            checklist.append("UP")
+            checklist['waterlevel'] = "UP"
         else:
-            checklist.append("LOW")
+            checklist['waterlevel'] = "LOW"
 
     # check Ph condition
     if states.phUL > ph > states.phLL:
-        checklist.append("OK")
+        checklist['ph'] ="OK"
     else:
         if ph > states.phUL:
-            checklist.append("UP")
+            checklist['ph'] ="UP"
         else:
-            checklist.append("LOW")
+            checklist['ph'] ="LOW"
 
     # check EC condition
     if states.ecUL > ec > states.ecLL:
-        checklist.append("OK")
+        checklist['ec'] ="OK"
     else:
         if ec > states.ecUL:
-            checklist.append("UP")
+            checklist['ec'] ="UP"
         else:
-            checklist.append("LOW")
+            checklist['ec'] ="LOW"
 
     return checklist
 

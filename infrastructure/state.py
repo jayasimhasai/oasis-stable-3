@@ -20,3 +20,5 @@ class State:
         self.ecLL = 0.0
         self.waterlevelUL = 0.0
         self.waterlevelLL = 0.0
+        self.ph_dosing_flag = False
+        self.water_change_flag = False

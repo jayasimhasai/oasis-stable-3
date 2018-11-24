@@ -269,6 +269,7 @@ class Main:
         schedule.clear()
         self.states.Current_Mode = "GROW END"
         self.states.activated = False
+        self.states.initiate_grow_flag = False
         return
 
     def set_mode_water_change(self, param):
@@ -283,7 +284,8 @@ class Main:
         elif param == 'end':
             self.states.Current_Mode = "FOLLOW CONFIG"
             self.states.activated = False
-
+        else:
+            self.logger.debug('Wrong Water change input')
         return
 
     def set_mode_ph_change(self, param):
@@ -299,7 +301,8 @@ class Main:
         elif param == 'end':
             self.states.Current_Mode = "FOLLOW CONFIG"
             self.states.activated = False
-
+        else:
+            self.logger.debug('Wrong ph dosing input')
         return
 
     def task_activation(self, client, userdata, message):

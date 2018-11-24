@@ -73,7 +73,7 @@ class GrowCycle:
                                                    'fanOnDuration'))
         self.fanOnInterval = float(self.parser.get(currentWeek,
                                                    'fanOnInterval'))
-        self.pumpMixingOnDuration = int(self.parser.get(currentWeek,
+        self.pumpMixingOnDuration = float(self.parser.get(currentWeek,
                                                         'pumpMixingOnDuration'))
         self.pumpMixingOnInterval = int(self.parser.get(currentWeek,
                                                         'pumpMixingOnInterval'))
@@ -81,21 +81,22 @@ class GrowCycle:
                                                          'pumpPouringOnDuration'))
         self.pumpPouringOnInterval = int(self.parser.get(currentWeek,
                                                          'pumpPouringOnInterval'))
-        self.collectDataInterval = int(self.parser.get(currentWeek,
+        self.collectDataInterval = float(self.parser.get(currentWeek,
                                                        'collectDataInterval'))
-        self.collectDataDuration = int(self.parser.get(currentWeek,
+        self.collectDataDuration = float(self.parser.get(currentWeek,
                                                        'collectDataDuration'))
-        self.collectCameraInterval = int(self.parser.get(currentWeek,
+        self.collectCameraInterval = float(self.parser.get(currentWeek,
                                                          'collectCameraInterval'))
-        self.collectCameraDuration = int(self.parser.get(currentWeek,
+        self.collectCameraDuration = float(self.parser.get(currentWeek,
                                                          'collectCameraDuration'))
         self.sendDataToAWSInterval = float(self.parser.get(currentWeek,
                                                            'sendDataInterval'))
         self.sendImagesToAWSInterval = float(self.parser.get(currentWeek,
                                                              'sendImagesInterval'))
-        self.phDosingInterval = float(self.parser.get(currentWeek,
+        if currentWeek == 'ph_dosing':
+            self.phDosingInterval = float(self.parser.get(currentWeek,
                                                       'phDosingInterval'))
-        self.phDosingDuration = float(self.parser.get(currentWeek,
+            self.phDosingDuration = float(self.parser.get(currentWeek,
                                                       'phDosingDuration'))
         self.logger.debug('Read config file')
 

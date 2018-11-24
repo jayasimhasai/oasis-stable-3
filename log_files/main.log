@@ -1,51 +1,17 @@
-2018-11-21 23:24:03,358:DEBUG:__main__:user activated task grow-start
-2018-11-21 23:24:03,368:DEBUG:__main__:config_file present
-2018-11-21 23:24:03,378:DEBUG:__main__:Grow Initiated
-2018-11-21 23:24:03,387:DEBUG:__main__:Read config file
-2018-11-21 23:24:03,388:DEBUG:__main__:Global states declared
-2018-11-21 23:24:03,388:DEBUG:__main__:Config file scheduler created
-2018-11-21 23:24:03,390:DEBUG:__main__:Config file scheduler started
-2018-11-21 23:24:33,437:DEBUG:__main__:Send Images to AWS
-2018-11-21 23:25:03,483:INFO:__main__:Led on
-2018-11-21 23:25:03,484:INFO:__main__:Fan On
-2018-11-21 23:25:03,485:DEBUG:__main__:Send Images to AWS
-2018-11-21 23:25:33,530:DEBUG:__main__:Send Images to AWS
-2018-11-21 23:26:03,577:INFO:__main__:Led on
-2018-11-21 23:26:03,578:INFO:__main__:Fan On
-2018-11-21 23:26:03,579:DEBUG:__main__:Send Images to AWS
-2018-11-21 23:26:33,626:DEBUG:__main__:Send Images to AWS
-2018-11-21 23:27:03,671:INFO:__main__:Sensor Data Received
-2018-11-21 23:27:03,673:INFO:__main__:Led on
-2018-11-21 23:27:03,674:INFO:__main__:Fan On
-2018-11-21 23:27:03,675:DEBUG:__main__:Send Images to AWS
-2018-11-21 23:27:33,720:DEBUG:__main__:Send Images to AWS
-2018-11-21 23:28:03,765:INFO:__main__:Led on
-2018-11-21 23:28:03,766:INFO:__main__:Fan On
-2018-11-21 23:28:03,768:DEBUG:__main__:Send Images to AWS
-2018-11-21 23:28:33,814:DEBUG:__main__:Send Images to AWS
-2018-11-21 23:29:03,861:INFO:__main__:Led on
-2018-11-21 23:29:03,863:INFO:__main__:Fan On
-2018-11-21 23:29:03,864:DEBUG:__main__:Send Images to AWS
-2018-11-21 23:29:33,913:DEBUG:__main__:Send Images to AWS
-2018-11-21 23:30:03,959:INFO:__main__:Sensor Data Received
-2018-11-21 23:30:03,960:INFO:__main__:Led on
-2018-11-21 23:30:03,961:INFO:__main__:Fan On
-2018-11-21 23:30:03,962:DEBUG:__main__:Send Images to AWS
-2018-11-21 23:30:34,008:DEBUG:__main__:Send Images to AWS
-2018-11-21 23:31:04,053:INFO:__main__:Led on
-2018-11-21 23:31:04,054:INFO:__main__:Fan On
-2018-11-21 23:31:04,055:DEBUG:__main__:Send Images to AWS
-2018-11-21 23:31:34,102:DEBUG:__main__:Send Images to AWS
-2018-11-21 23:32:04,149:INFO:__main__:Led on
-2018-11-21 23:32:04,150:INFO:__main__:Fan On
-2018-11-21 23:32:04,151:DEBUG:__main__:Send Images to AWS
-2018-11-21 23:32:34,194:DEBUG:__main__:Send Images to AWS
-2018-11-21 23:33:04,239:INFO:__main__:Sensor Data Received
-2018-11-21 23:33:04,240:INFO:__main__:Led on
-2018-11-21 23:33:04,240:INFO:__main__:Fan On
-2018-11-21 23:33:04,240:DEBUG:__main__:Send Images to AWS
-2018-11-21 23:33:34,285:DEBUG:__main__:Send Images to AWS
-2018-11-21 23:34:04,331:INFO:__main__:Led on
-2018-11-21 23:34:04,332:INFO:__main__:Fan On
-2018-11-21 23:34:04,333:DEBUG:__main__:Send Images to AWS
-2018-11-21 23:34:34,377:DEBUG:__main__:Send Images to AWS
+2018-11-23 19:33:06,447:DEBUG:__main__:user activated task grow-start
+2018-11-23 19:33:06,455:DEBUG:__main__:Grow Started by the user
+2018-11-23 19:33:06,473:DEBUG:__main__:Config File Found
+2018-11-23 19:33:06,483:DEBUG:__main__:Config File Read
+2018-11-23 19:33:06,484:DEBUG:__main__:Grow Initiated
+2018-11-23 19:33:06,492:INFO:__main__:Fetching the schedule data for week0
+2018-11-23 19:33:06,494:DEBUG:__main__:Read config file
+2018-11-23 19:33:06,495:DEBUG:__main__:Global states declared
+2018-11-23 19:33:06,495:DEBUG:__main__:Config file scheduler created
+2018-11-23 19:33:06,496:DEBUG:__main__:LED task created
+2018-11-23 19:33:06,496:DEBUG:__main__:Fan scheduler created
+2018-11-23 19:33:06,496:DEBUG:__main__:Mixing pump task created
+2018-11-23 19:33:06,497:DEBUG:__main__:data acquisition and image capture created
+2018-11-23 19:33:06,497:DEBUG:__main__:Data sending to AWS scheduled
+2018-11-23 19:33:06,498:DEBUG:__main__:Image sending to S3 scheduled
+2018-11-23 19:33:06,498:DEBUG:__main__:[Every 0.5 days do light_on() (last run: [never], next run: 2018-11-24 07:33:06), Every 0.3 hours do fan_on() (last run: [never], next run: 2018-11-23 19:51:06), Every 6 hours do pump_mixing_on() (last run: [never], next run: 2018-11-24 01:33:06), Every 60 minutes do get_camera_data() (last run: [never], next run: 2018-11-23 20:33:06), Every 0.4 minutes do data_acquisition_job() (last run: [never], next run: 2018-11-23 19:33:30), Every 0.5 hours do send_data_to_aws() (last run: [never], next run: 2018-11-23 20:03:06), Every 0.5 hours do send_camera_data() (last run: [never], next run: 2018-11-23 20:03:06)]
+2018-11-23 19:33:06,499:DEBUG:__main__:Config file scheduler started

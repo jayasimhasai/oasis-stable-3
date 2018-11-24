@@ -52,3 +52,21 @@
 2018-11-21 23:22:00,011:DEBUG:aws.aws_interface:connected to aws..
 2018-11-21 23:22:00,019:DEBUG:aws.aws_interface:subscribed to topic -- dev_ae1a34597bc14b0ea2c82700f91de6f4/task, activated callback function <bound method Main.task_activation of <__main__.Main object at 0x76aa2610>>
 2018-11-21 23:22:00,159:DEBUG:aws.aws_interface:subscribed to topic -- dev_ae1a34597bc14b0ea2c82700f91de6f4/task, activated callback function <bound method Main.task_activation of <__main__.Main object at 0x76aa2610>>
+2018-11-23 19:29:16,141:DEBUG:aws.aws_interface:Trying to connect to aws..
+2018-11-23 19:29:16,154:WARNING:aws.aws_interface:Not connected to aws..
+2018-11-23 19:29:16,154:WARNING:aws.aws_interface:[Errno -3] Temporary failure in name resolution
+2018-11-23 19:29:21,161:DEBUG:aws.aws_interface:Trying to connect to aws..
+2018-11-23 19:29:21,173:WARNING:aws.aws_interface:Not connected to aws..
+2018-11-23 19:29:21,174:WARNING:aws.aws_interface:[Errno -3] Temporary failure in name resolution
+2018-11-23 19:29:26,181:DEBUG:aws.aws_interface:Trying to connect to aws..
+2018-11-23 19:29:26,680:DEBUG:aws.aws_interface:connected to aws..
+2018-11-23 19:29:26,705:DEBUG:aws.aws_interface:subscribed to topic -- dev_ae1a34597bc14b0ea2c82700f91de6f4/task, activated callback function <bound method Main.task_activation of <__main__.Main object at 0x76a78610>>
+2018-11-23 19:31:03,292:DEBUG:aws.aws_interface:Trying to connect to aws..
+2018-11-23 19:31:03,753:DEBUG:aws.aws_interface:connected to aws..
+2018-11-23 19:31:03,789:DEBUG:aws.aws_interface:subscribed to topic -- dev_ae1a34597bc14b0ea2c82700f91de6f4/task, activated callback function <bound method Main.task_activation of <__main__.Main object at 0x76a1b610>>
+2018-11-23 19:31:35,774:DEBUG:aws.aws_interface:Trying to connect to aws..
+2018-11-23 19:31:36,213:DEBUG:aws.aws_interface:connected to aws..
+2018-11-23 19:31:36,240:DEBUG:aws.aws_interface:subscribed to topic -- dev_ae1a34597bc14b0ea2c82700f91de6f4/task, activated callback function <bound method Main.task_activation of <__main__.Main object at 0x76abe610>>
+2018-11-23 19:33:02,419:DEBUG:aws.aws_interface:Trying to connect to aws..
+2018-11-23 19:33:02,904:DEBUG:aws.aws_interface:connected to aws..
+2018-11-23 19:33:02,931:DEBUG:aws.aws_interface:subscribed to topic -- dev_ae1a34597bc14b0ea2c82700f91de6f4/task, activated callback function <bound method Main.task_activation of <__main__.Main object at 0x76a3b610>>

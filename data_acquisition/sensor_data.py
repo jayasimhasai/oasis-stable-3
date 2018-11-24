@@ -3,9 +3,8 @@ import json
 import datetime
 import RPi.GPIO as GPIO
 
-
 class SensorData:
-    def __init__(self, logger):
+    def __init__(self):
         """
         Initialize variables and operators
         1. initialize serial port
@@ -23,7 +22,7 @@ class SensorData:
         GPIO.setmode(GPIO.BCM)
         GPIO.setup(self.interrupt_pin, GPIO.OUT, initial=1)
 
-        self.logger = logger
+        # self.logger = logger
 
     def get_data(self):
         """
@@ -47,38 +46,46 @@ class SensorData:
                 GPIO.output(self.interrupt_pin, interrupt)
 
                 sensor_data = self.receive_from_arduino()
+                
             except ConnectionError:
                 print("Connection Error")
-            filter_sensor_data = self.filter_data(sensor_data)
-            if filter_sensor_data['signature'] == '0xAB46CA':
+            filter_sensor_data = self.filter_data(sensor_data.decode())
+            if filter_sensor_data['signature'] == 'AE6C88FE':
                 filter_sensor_data['status'] = 'OK'
                 ack = True
             else:
                 ack = False
 
-        self.logger.debug('Sensor Data read')
+        # self.logger.debug('Sensor Data read')
 
         return filter_sensor_data
 
-    def filter_data(self, data):
+    def filter_data(self, received_data):
         # initialize a filter_data dictionary
-        filtered_data = {}
-
-        # split the data string into individual elements
-        data_split = data.split()
+        filtered_data = {'signature': None,
+                         'temperature': None,
+                         'humidity': None,
+                         'waterlevel': None,
+                         'pH': None,
+                         'EC': None,
+                         'status': 'PENDING',
+                         'timestamp': None}
         data = ['signature', 'temperature', 'humidity',
-                'waterlevel', 'pH', 'turbidity', 'status', 'timestamp']
+                    'waterlevel', 'pH', 'EC', 'status', 'timestamp']
+        # split the data string into individual elements
+        data_split = received_data.split()
+        if len(data_split) == 6:
+            
 
-        filtered_data[data[0]] = data_split[0]
-        filtered_data[data[1]] = data_split[1]
-        filtered_data[data[2]] = data_split[2]
-        filtered_data[data[3]] = data_split[3]
-        filtered_data[data[4]] = data_split[4]
-        filtered_data[data[5]] = data_split[5]
-        filtered_data[data[6]] = ""
-        filtered_data[data[7]] = datetime.datetime.now()
+            filtered_data[data[0]] = data_split[0]
+            filtered_data[data[1]] = data_split[1]
+            filtered_data[data[2]] = data_split[2]
+            filtered_data[data[3]] = data_split[3]
+            filtered_data[data[4]] = data_split[4]
+            filtered_data[data[5]] = data_split[5]
+            filtered_data[data[6]] = ""
+            filtered_data[data[7]] = datetime.datetime.now()
 
-        self.logger.debug('Sensor Data filtered')
         return filtered_data
 
     def send_to_arduino(self, message):
@@ -95,3 +102,7 @@ class SensorData:
         else:
             print("Incorrect Data Format")
         return json_data
+
+if __name__ == '__main__':
+    sensor = SensorData()
+    print(sensor.get_data())

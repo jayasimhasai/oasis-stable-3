@@ -93,7 +93,10 @@ class GrowCycle:
                                                            'sendDataInterval'))
         self.sendImagesToAWSInterval = float(self.parser.get(currentWeek,
                                                              'sendImagesInterval'))
-
+        self.phDosingInterval = float(self.parser.get(currentWeek,
+                                                      'phDosingInterval'))
+        self.phDosingDuration = float(self.parser.get(currentWeek,
+                                                      'phDosingDuration'))
         self.logger.debug('Read config file')
 
         self.initialize_states()
@@ -182,8 +185,8 @@ class GrowCycle:
         self.Actuator.turn_ph_up_motor_on()
         self.logger.debug('Ph up motor switched ON')
         phUpMotorOffTime = format(datetime.datetime.now() +
-                             datetime.timedelta(minutes=self.phDosingDuration),
-                             '%H:%M:%S')
+                                  datetime.timedelta(minutes=self.phDosingDuration),
+                                  '%H:%M:%S')
         schedule.every().day.at(phUpMotorOffTime).do(self.ph_up_motor_off)
 
     def ph_up_motor_off(self):
@@ -195,8 +198,8 @@ class GrowCycle:
         self.Actuator.turn_ph_down_motor_on()
         self.logger.debug('Ph down motor switched ON')
         phDownMotorOffTime = format(datetime.datetime.now() +
-                             datetime.timedelta(minutes=self.phDosingDuration),
-                             '%H:%M:%S')
+                                    datetime.timedelta(minutes=self.phDosingDuration),
+                                    '%H:%M:%S')
         schedule.every().day.at(phDownMotorOffTime).do(self.ph_down_motor_off)
 
     def ph_down_motor_off(self):

@@ -77,6 +77,7 @@ class SensorData:
         filtered_data[data[6]] = ""
         filtered_data[data[7]] = datetime.datetime.now()
 
+        self.logger.debug('Sensor Data filtered')
         return filtered_data
 
     def send_to_arduino(self, message):

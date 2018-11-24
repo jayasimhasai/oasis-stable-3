@@ -1,6 +1,7 @@
 from serial import Serial
 import json
 import datetime
+import RPi.GPIO as GPIO
 
 
 class SensorData:

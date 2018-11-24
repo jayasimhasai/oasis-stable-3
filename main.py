@@ -7,6 +7,7 @@ from configparser import ConfigParser
 from queue import Queue
 from grow_cycle import GrowCycle
 from data_acquisition.sensor_data import SensorData
+from data_acquisition.sensor_cluster import sensorCluster
 from data_acquisition.camera_capture import CameraCapture
 from infrastructure.state import State
 from infrastructure.critical_condition import *
@@ -31,7 +32,8 @@ class Main:
 
         self.states = State()
         self.grow_cycle = None
-        self.sensor_data = SensorData(self.logger)
+        #self.sensor_data = SensorData(self.logger)
+        self.sensor_cluster = sensorCluster()
         self.camera_capture = CameraCapture(self.logger)
         self.CC_Queue = Queue()
         self.Data_Queue = Queue()
@@ -144,8 +146,8 @@ class Main:
 
     def ph_routine(self):
         # get sensor data
-        data = self.sensor_data.get_data()
-
+        #data = self.sensor_data.get_data()
+        data = self.sensor_cluster.getAllSensorData()
         # send data for critical check
         critical_check = check_critical_condition(sensor_data=data, states=self.states)
 
@@ -193,8 +195,8 @@ class Main:
         :return:
         """
         # get sensor data
-        data = self.sensor_data.get_data()
-
+        #data = self.sensor_data.get_data()
+        data = self.sensor_cluster.getAllSensorData()
         # send data for critical check
         critical_check = check_critical_condition(sensor_data=data, states=self.states)
 

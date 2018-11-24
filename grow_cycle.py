@@ -49,6 +49,7 @@ class GrowCycle:
         # | add try catch later |
 
         self.parser.read('config_files/plant.conf')
+        self.logger.info('Fetching the schedule data for {}'.format(currentWeek))
         # get plant critical data
         self.tempUL = int(self.parser.get(currentWeek, 'tempUL'))
         self.tempLL = int(self.parser.get(currentWeek, 'tempLL'))

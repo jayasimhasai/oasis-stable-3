@@ -3,7 +3,7 @@ import time
 import json
 import schedule
 import threading
-from configparser import ConfigParser
+from configparser import SafeConfigParser
 from queue import Queue
 from grow_cycle import GrowCycle
 from data_acquisition.sensor_data import SensorData
@@ -41,14 +41,14 @@ class Main:
         self.AWS_Queue = Queue()
         self.AWS = AWSInterface()
         self.data_log = open('log_files/data_collected.log', 'w')
-
+        self.log_fn="log_files/data_collected.log"
     def main_function(self):
 
-        aws_thread = threading.Thread(target=self.aws_register)
-        aws_thread.start()
+        self.aws_register()
+
 
         while True:
-            if self.states.initiate_grow_flag is True:
+            if self.states.initiate_grow_flag == "True":
                 self.grow_cycle = GrowCycle(self.states, self.logger)
                 self.grow_cycle.get_growcycle_info()
                 estimated_harvest = self.grow_cycle.estimatedHarvest
@@ -56,34 +56,34 @@ class Main:
 
                 self.logger.debug('Grow Initiated')
 
-                while datetime.datetime.now() <= estimated_harvest:
-                    self.states.activated = False
+                while datetime.date.today() <= estimated_harvest:
+                    self.states.activated = "False"
 
                     # start weekly jobs
                     while self.get_current_week() == current_week:
 
-                        if self.states.Current_Mode == "FOLLOW CONFIG" and not self.states.activated:
+                        if self.states.Current_Mode == "FOLLOW CONFIG" and self.states.activated !="True":
                             self.grow_cycle.sched_current_week(current_week)
                             self.logger.debug('Config file scheduler created')
                             self.schedule_jobs()
-                            self.states.activated = True
+                            self.states.activated = "True"
                             self.logger.debug(schedule.jobs)
                             self.logger.debug('Config file scheduler started')
 
-                        elif self.states.Current_Mode == "WATER CHANGE" and not self.states.activated:
+                        elif self.states.Current_Mode == "WATER CHANGE" and self.states.activated !="True":
                             self.grow_cycle.sched_current_week('water_change')
                             self.logger.debug('Water Change scheduler created')
                             self.schedule_jobs()
-                            self.states.activated = True
+                            self.states.activated = "True"
                             self.logger.debug(schedule.jobs)
                             self.logger.debug('Water Change scheduler started')
 
-                        elif self.states.Current_Mode == "PH DOSING" and not self.states.activated:
+                        elif self.states.Current_Mode == "PH DOSING" and self.states.activated !="True":
                             self.grow_cycle.sched_current_week('ph_dosing')
                             self.logger.debug('Ph Dosing scheduler created')
                             self.schedule_jobs()
-                            self.states.activated = True
-                            self.states.ph_dosing_flag = True
+                            self.states.activated = "True"
+                            self.states.ph_dosing_flag = "True"
                             self.logger.debug(schedule.jobs)
                             self.logger.debug('Ph Dosing scheduler started')
 
@@ -98,11 +98,18 @@ class Main:
 
         return
 
+
     def schedule_jobs(self):
         """
         :parameter: creating scheduling jobs
         :return:
         """
+        print("Scheduling jobs")
+        execute_once_time = format(datetime.datetime.now()+
+                             datetime.timedelta(minutes=1),
+                             '%H:%M')
+        schedule.every().day.at(execute_once_time).do(self.execute_once)
+        print("scheduled once...")
         # led scheduling
         if self.grow_cycle.ledOnDuration != 0:
             schedule.every(self.grow_cycle.ledOnInterval).days.\
@@ -121,6 +128,11 @@ class Main:
                 do(self.grow_cycle.pump_mixing_on)
         self.logger.debug('Mixing pump task created')
 
+        if self.grow_cycle.pumpPouringOnDuration != 0:
+            schedule.every(self.grow_cycle.pumpPouringOnInterval).hours.\
+                do(self.grow_cycle.pump_pouring_on)
+        self.logger.debug('Pouring pump task created')
+
         # data acquisition and image capture scheduling
         schedule.every(self.grow_cycle.collectImageInterval).minutes.\
             do(self.get_camera_data)
@@ -129,7 +141,7 @@ class Main:
         self.logger.debug('data acquisition and image capture created')
 
         # schedule sending data to aws
-        schedule.every(self.grow_cycle.sendDataToAWSInterval).hours.\
+        schedule.every(self.grow_cycle.sendDataToAWSInterval).minutes.\
             do(self.send_data_to_aws)
         self.logger.debug('Data sending to AWS scheduled')
 
@@ -144,6 +156,43 @@ class Main:
             self.logger.debug('Ph dosing routine scheduled')
         return
 
+    def execute_once(self):
+        print("Executing once..")
+        if self.grow_cycle.ledOnDuration != 0:
+            self.grow_cycle.light_on()
+            self.logger.debug('LED task created')
+
+        # fan scheduling
+        if self.grow_cycle.fanOnDuration != 0:
+            self.grow_cycle.fan_on()
+            self.logger.debug('Fan scheduler created')
+
+        # pump_mixing scheduling
+        if self.grow_cycle.pumpMixingOnDuration != 0:
+            self.grow_cycle.pump_mixing_on()
+            self.logger.debug('Mixing pump task created')
+
+        if self.grow_cycle.pumpPouringOnDuration != 0:
+            self.grow_cycle.pump_pouring_on()
+            self.logger.debug('Pouring pump task created')
+
+        # data acquisition and image capture scheduling
+        self.get_camera_data()
+        self.data_acquisition_job()
+        self.logger.debug('data acquisition and image capture created')
+
+        # schedule sending data to aws
+        self.send_data_to_aws()
+        self.logger.debug('Data sending to AWS scheduled')
+
+        # schedule sending images to aws S3
+        self.send_camera_data()
+        self.logger.debug('Image sending to S3 scheduled')
+
+        self.logger.debug(schedule.jobs)
+
+        return schedule.CancelJob
+
     def ph_routine(self):
         # get sensor data
         #data = self.sensor_data.get_data()
@@ -152,12 +201,12 @@ class Main:
         critical_check = check_critical_condition(sensor_data=data, states=self.states)
 
         if critical_check['ph'] == 'OK':
-            self.states.ph_dosing_flag = False
+            self.states.ph_dosing_flag = "False"
         elif critical_check['ph'] == 'UP':
-            self.states.ph_dosing_flag = True
+            self.states.ph_dosing_flag = "True"
             self.grow_cycle.ph_up_motor_on()
         elif critical_check['ph'] == 'DOWN':
-            self.states.ph_dosing_flag = True
+            self.states.ph_dosing_flag = "True"
             self.grow_cycle.ph_down_motor_on()
 
         if not self.states.ph_dosing_flag:
@@ -199,10 +248,10 @@ class Main:
         data = self.sensor_cluster.getAllSensorData()
         # send data for critical check
         critical_check = check_critical_condition(sensor_data=data, states=self.states)
-
+        print(data)
         # evaluate the critical condition checklist
         # send the data to queue
-        if critical_check.values().count("OK") < 5:
+        if sum( x == "OK" for x in critical_check.values() ) < 5:
             track_critical_condition(critical_check)
             self.Data_Queue.put(data)
         else:
@@ -212,31 +261,45 @@ class Main:
 
     def get_camera_data(self):
         # get image data
-        image = self.camera_capture.capture_image(frame_no=self.states.frame_no)
+        image = self.camera_capture.capture_image()
         self.Image_Queue.put(image)
         return
 
     def send_camera_data(self):
-        # while not self.Image_Queue.empty():
-        #     self.AWS.sendData(self.Image_Queue.get())
+        self.logger.debug('Sending {} image packets to AWS'.format(self.Image_Queue.qsize()))
+        empty = False
+        while not empty:
+            self.AWS.sendCameraData(self.Image_Queue.get())
+            empty = self.Image_Queue.empty()
+        
         return
 
     def send_data_to_aws(self):
         while not self.Data_Queue.empty():
-            self.write_to_file(self.Data_Queue.get())
-            # self.AWS.sendData(self.Data_Queue.get())
+            #self.write_to_file(self.Data_Queue.get())
+            data = {
+            "sensor":self.Data_Queue.get(),
+            "actuator": {
+                "led":self.states.LED_status,
+                "fan":self.states.FAN_status,
+                "mixing_pump":self.states.Pump_Mix_status,
+                "pour_pump":self.states.Pump_Pour_status
+                }
+            }
+            self.AWS.sendData(data)
         return
 
     def get_current_week(self):
         startdate = self.grow_cycle.growStartDate
-        day_count = datetime.datetime.now() - startdate
+        day_count = datetime.date.today() - startdate
         week_number = int(day_count.days / 7)
         current_week = 'week'+str(week_number)
         return current_week
 
     def write_to_file(self, message):
-        self.data_log.write(message)
-        self.data_log.write('\n')
+        fp=open(self.log_fn,'w+')
+        fp.write(str(message))
+        fp.close()
 
     def aws_register(self):
         parser = ConfigParser()
@@ -257,9 +320,22 @@ class Main:
         self.logger.debug('Grow Started by the user')
         schedule.clear()
         self.states.Current_Mode = "FOLLOW CONFIG"
-        self.states.activated = False
-        self.states.initiate_grow_flag = True
-
+        self.states.activated = "False"
+        self.states.initiate_grow_flag = "True"
+        parser =SafeConfigParser()
+        parser.read("config_files/status.conf")
+        parser['status']['current_mode'] = "FOLLOW CONFIG"
+        parser['status']['activated'] = "False"
+        parser['status']['initiate_grow_flag'] = "True"
+        with open('config_files/status.conf','w') as configfile:
+            parser.write(configfile)
+        parser =SafeConfigParser()
+        parser.read("config_files/plant.conf")
+        plantCycleDuration = parser.get('PlantInfo', 'plantCycle')
+        parser['PlantInfo']['plantingDate'] = str(datetime.date.today())
+        parser['PlantInfo']['estimatedHarvest'] = str(datetime.date.today() + datetime.timedelta(weeks=int(plantCycleDuration)))
+        with open('config_files/plant.conf','w') as configfile:
+            parser.write(configfile)
         return
 
     def set_mode_grow_end(self):
@@ -270,8 +346,15 @@ class Main:
         self.logger.debug('Grow Ends')
         schedule.clear()
         self.states.Current_Mode = "GROW END"
-        self.states.activated = False
-        self.states.initiate_grow_flag = False
+        self.states.activated = "False"
+        self.states.initiate_grow_flag = "False"
+        parser =SafeConfigParser()
+        parser.read("config_files/status.conf")
+        parser['status']['current_mode'] = "GROW END"
+        parser['status']['activated'] = "False"
+        parser['status']['initiate_grow_flag'] = "False"
+        with open('config_files/status.conf','w') as configfile:
+        	parser.write(configfile)
         return
 
     def set_mode_water_change(self, param):
@@ -282,10 +365,22 @@ class Main:
         schedule.clear()
         if param == 'start':
             self.states.Current_Mode = "WATER CHANGE"
-            self.states.activated = False
+            self.states.activated = "False"
+            parser =SafeConfigParser()
+            parser.read("config_files/status.conf")
+            parser['status']['current_mode'] = "WATER CHANGE"
+            parser['status']['activated'] = "False"
+            with open('config_files/status.conf','w') as configfile:
+            	parser.write(configfile)
         elif param == 'end':
             self.states.Current_Mode = "FOLLOW CONFIG"
-            self.states.activated = False
+            self.states.activated = "False"
+            parser =SafeConfigParser()
+            parser.read("config_files/status.conf")
+            parser['status']['current_mode'] = "FOLLOW CONFIG"
+            parser['status']['activated'] = "False"
+            with open('config_files/status.conf','w') as configfile:
+            	parser.write(configfile)
         else:
             self.logger.debug('Wrong Water change input')
         return
@@ -299,10 +394,22 @@ class Main:
         self.logger.debug('Ph dosing initiated by the user')
         if param == 'start':
             self.states.Current_Mode = "PH DOSING"
-            self.states.activated = False
+            self.states.activated = "False"
+            parser =SafeConfigParser()
+            parser.read("config_files/status.conf")
+            parser['status']['current_mode'] = "PH DOSING"
+            parser['status']['activated'] = "False"
+            with open('config_files/status.conf','w') as configfile:
+            	parser.write(configfile)
         elif param == 'end':
             self.states.Current_Mode = "FOLLOW CONFIG"
-            self.states.activated = False
+            self.states.activated = "False"
+            parser =SafeConfigParser()
+            parser.read("config_files/status.conf")
+            parser['Status']['current_mode'] = "FOLLOW CONFIG"
+            parser['Status']['activated'] = "False"
+            with open('config_files/status.conf','w') as configfile:
+            	parser.write(configfile)
         else:
             self.logger.debug('Wrong ph dosing input')
         return
@@ -327,10 +434,10 @@ class Main:
         elif task == "water-change-end":
             self.set_mode_water_change("end")
 
-        elif task == "ph-change-start":
+        elif task == "ph-dosing-start":
             self.set_mode_ph_change("start")
 
-        elif task == "ph-change-end":
+        elif task == "ph-dosing-end":
             self.set_mode_ph_change("end")
 
         else:

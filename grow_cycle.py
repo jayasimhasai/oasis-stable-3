@@ -39,7 +39,7 @@ class GrowCycle:
         self.sendImagesToAWSInterval = None
         self.phDosingInterval = None
         self.phDosingDuration = None
-        self.collectDataInterval = 30
+        self.collectDataInterval = 2
         self.collectImageInterval = 60
         self.Actuator = ActuatorControl(logger_received)
         self.states = states
@@ -126,9 +126,9 @@ class GrowCycle:
         self.Actuator.turn_light_on()
         self.logger.debug('Led switched ON')
         self.states.LED_status = True
-        lightOffTime = format(datetime.datetime.now() +
+        lightOffTime = format(datetime.datetime.now()+
                               datetime.timedelta(hours=self.ledOnDuration),
-                              '%H:%M:%S')
+                              '%H:%M')
         schedule.every().day.at(lightOffTime).do(self.light_off)
 
     def light_off(self):
@@ -141,9 +141,9 @@ class GrowCycle:
         self.Actuator.turn_fan_on()
         self.logger.debug('Fan switched ON')
         self.states.FAN_status = True
-        fanOffTime = format(datetime.datetime.now() +
+        fanOffTime = format(datetime.datetime.now()+
                             datetime.timedelta(minutes=self.fanOnDuration),
-                            '%H:%M:%S')
+                            '%H:%M')
         schedule.every().day.at(fanOffTime).do(self.fan_off)
 
     def fan_off(self):
@@ -156,9 +156,9 @@ class GrowCycle:
         self.Actuator.turn_pump_mixing_on()
         self.logger.debug('Mixing Pump switched ON')
         self.states.Pump_Mix_status = True
-        pumpOffTime = format(datetime.datetime.now() +
+        pumpOffTime = format(datetime.datetime.now()+
                              datetime.timedelta(minutes=self.pumpMixingOnDuration),
-                             '%H:%M:%S')
+                             '%H:%M')
         schedule.every().day.at(pumpOffTime).do(self.pump_mixing_off)
 
     def pump_mixing_off(self):
@@ -172,9 +172,9 @@ class GrowCycle:
         self.logger.debug('Pouring Pump switched ON')
         self.states.Pump_Mix_status = True
         pumpOffTime = format(datetime.datetime.now() +
-                             datetime.timedelta(minutes=self.pumpPouringOnDuration),
+                             datetime.timedelta(seconds=self.pumpPouringOnDuration),
                              '%H:%M:%S')
-        schedule.every().day.at(pumpOffTime).do(self.pump_pouring_off)
+        schedule.every(self.pumpPouringOnDuration).seconds.do(self.pump_pouring_off)
 
     def pump_pouring_off(self):
         self.Actuator.turn_pump_pour_off()
@@ -213,12 +213,18 @@ class GrowCycle:
             self.logger.debug('Config File Found')
             self.parser.read('config_files/plant.conf')
             self.plantCycleDuration = self.parser.get('PlantInfo', 'plantCycle')
-            self.growStartDate = datetime.datetime.now()
-            self.estimatedHarvest = datetime.datetime.now() + datetime.timedelta(weeks=int(self.plantCycleDuration))
+            self.growStartDate = self.strtoDate(self.parser.get('PlantInfo', 'plantingDate'))
+            self.estimatedHarvest = self.strtoDate(self.parser.get('PlantInfo','estimatedHarvest'))
             self.logger.debug('Config File Read')
         else:
             self.logger.error('Config File Not Found')
 
+    def strtoDate(self,date):
+        ''':type date: str
+        :rtype: status: datetime.timedelta'''
+        date = [int(x) for x in date.split('-')]
+        formatted_date = datetime.date(date[0], date[1], date[2])
+        return formatted_date
 
 if __name__ == '__main__':
     statesv = State()

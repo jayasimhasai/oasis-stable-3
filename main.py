@@ -267,10 +267,10 @@ class Main:
 
     def send_camera_data(self):
         self.logger.debug('Sending {} image packets to AWS'.format(self.Image_Queue.qsize()))
-        empty = False
-        while not empty:
-            self.AWS.sendCameraData(self.Image_Queue.get())
-            empty = self.Image_Queue.empty()
+        #empty = False
+        #while not empty:
+            #self.AWS.sendCameraData(self.Image_Queue.get())
+            #empty = self.Image_Queue.empty()
         
         return
 

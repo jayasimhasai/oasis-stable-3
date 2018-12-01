@@ -175,6 +175,7 @@ class GrowCycle:
                              datetime.timedelta(seconds=self.pumpPouringOnDuration),
                              '%H:%M:%S')
         schedule.every(self.pumpPouringOnDuration).seconds.do(self.pump_pouring_off)
+	#schedule.every().day.at(pumpOffTime).do(self.pump_pouring_off)
 
     def pump_pouring_off(self):
         self.Actuator.turn_pump_pour_off()

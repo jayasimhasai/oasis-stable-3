@@ -4,29 +4,25 @@ import patch
 import requests
 import time
 import os
-
+import json
 
 def do_update(client, userdata, message):
-	patch_location = message.payload.url
-	file_name = message.payload.file_name
-	parser = ConfigParser()
-	parser.read('config_files/device.conf')
-	user_id = parser.get('device', 'userId')
-
-	PARAMS = { 	'user_id':user_id,
-			'device_type':"aeroasis_device"
-				}
-
-	r = requests.get(url=patch_location, params=PARAMS, stream=True)
-	with open("file_name", 'wb') as f:
-		for chunk in r.iter_content(chunk_size=1024):
-			if chunk:
-				f.write(chunk)
+	file_name = "update.patch"
+	URL = "https://r65hlx6e9a.execute-api.us-west-2.amazonaws.com/beta/get-system-update"
+	r = requests.get(url=URL)
+	data = r.json()
+	file = json.loads(data['body'])['Body']['data']
+	strf = ''.join(chr(i) for i in file)
+	
+	print(strf)
+	f = open("update.patch","w")
+	f.write(strf)
+	f.close()
 	time.sleep(5)
-
-	p = patch.fromfile("".format(file_name))
+	print("written to file")
+	p = patch.fromfile("update.patch")
 	p.apply()
-
+	print("patched applied")
 	os.system('reboot')
 
 
